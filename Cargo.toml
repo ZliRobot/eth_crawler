@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.67"
+chrono = "0.4.24"
 clap = {version = "4.0.0", features = ["derive"]}
 ethers = { version = "2.0.0", features = ["rustls"] }
 tokio = "1.24.2"
