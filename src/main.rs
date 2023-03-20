@@ -13,11 +13,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     display_header();
 
     for transaction in provider
-        .transations_from_since_upto(args.address, args.starting_block, current_block.as_u64())
+        .transations_of_since_upto(args.address, args.starting_block, current_block.as_u64())
         .await?
         .into_iter()
     {
-        print_formated(transaction);
+        print_formated(transaction, args.address);
     }
 
     Ok(())
