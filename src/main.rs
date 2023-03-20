@@ -17,18 +17,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let provider = Provider::<Http>::try_from(RPC_URL)?;
     let current_block = provider.get_block_number().await?;
+    println!();
+    println!(
+        "| {:15} | {:10} | {:15} | {:20} |",
+        "Tx hash", "Block", "To:", "Value"
+    );
+    println!("{:-<1$}", "", 73);
 
     for block_number in args.starting_block..=current_block.as_u64() {
         let block = provider
             .get_block_with_txs(block_number)
             .await?
             .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?;
+
         for transaction in block
             .transactions
             .into_iter()
             .filter(|transaction| transaction.from == args.address)
         {
-            println!("{:#?}", transaction.hash);
+            println!(
+                "| {:<15} | {:<10} | {:<15} | {:<20} |",
+                transaction.hash.to_string(),
+                transaction
+                    .block_number
+                    .map(|block_number| block_number.to_string())
+                    .unwrap_or_else(|| "Pending".into()),
+                transaction
+                    .to
+                    .map(|to| to.to_string())
+                    .unwrap_or_else(|| "Creating SC".into()),
+                transaction.value
+            );
         }
     }
 
