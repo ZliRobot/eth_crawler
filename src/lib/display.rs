@@ -1,9 +1,10 @@
 use ethers::prelude::*;
+use super::balance::Balance;
 
 pub fn display_header() {
     println!(
         "\n| {:15} | {:10} | {:20} | {:20} |\n{:-<5$}",
-        "Tx hash", "Block", "To/from", "Value", "", 78
+        "Tx hash", "Block", "To/from", "Value (ETH)", "", 78
     )
 }
 pub fn print_formated(transaction: Transaction, target: Address) {
@@ -28,6 +29,6 @@ pub fn print_formated(transaction: Transaction, target: Address) {
             .unwrap_or_else(|| "Pending".into()),
         direction,
         address,
-        transaction.value
+        Balance::from(transaction.value)
     );
 }

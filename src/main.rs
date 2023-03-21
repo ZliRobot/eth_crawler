@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(time) = args.time {
         let timestamp = DateTime::parse_from_str(&time, "%Y-%m-%d %H:%M:%S %z")?.timestamp();
         println!(
-            "Balance at {}: {:?}",
+            "Balance at {}: {}ETH",
             time,
             provider.balance_at_timestamp(args.address, timestamp).await?
         );
