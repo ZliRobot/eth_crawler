@@ -30,7 +30,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!(
             "Balance at {}: {}ETH",
             time,
-            provider.balance_at_timestamp(args.address, timestamp).await?
+            provider
+                .balance_at_timestamp(args.address, timestamp)
+                .await?
         );
     }
 

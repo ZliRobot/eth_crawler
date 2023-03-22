@@ -1,5 +1,5 @@
-use ethers::prelude::*;
 use super::balance::Balance;
+use ethers::prelude::*;
 
 pub fn display_header() {
     println!(

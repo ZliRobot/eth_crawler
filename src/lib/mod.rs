@@ -1,12 +1,12 @@
 use clap::Parser;
 use ethers::prelude::*;
 
-pub mod display;
 pub mod balance;
+pub mod display;
 pub mod transactions;
 
-pub use display::{display_header, print_formated};
 pub use balance::EthCrawlerBalance;
+pub use display::{display_header, print_formated};
 pub use transactions::EthCrawlerTransactions;
 
 pub const RPC_URL: &str = "https://eth.llamarpc.com";

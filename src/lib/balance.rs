@@ -1,15 +1,18 @@
 use async_trait::async_trait;
+use ethers::prelude::*;
 use std::convert::From;
 use std::fmt;
-use ethers::prelude::*;
 
-pub struct Balance{
-    wei: U256
+pub struct Balance {
+    wei: U256,
 }
 
 impl fmt::Display for Balance {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut s = format!("{:0>19}", self.wei).chars().rev().collect::<Vec<_>>();
+        let mut s = format!("{:0>19}", self.wei)
+            .chars()
+            .rev()
+            .collect::<Vec<_>>();
         s.insert(18, '.');
         let s = s.into_iter().rev().collect::<String>();
         std::write!(f, "{}", s)
@@ -18,7 +21,7 @@ impl fmt::Display for Balance {
 
 impl From<U256> for Balance {
     fn from(wei: U256) -> Self {
-        Self{wei}
+        Self { wei }
     }
 }
 
@@ -64,6 +67,8 @@ impl<P: JsonRpcClient> EthCrawlerBalance for Provider<P> {
                 .as_u64();
         }
 
-        Ok(Balance{ wei: self.get_balance(address, Some(lower_block.into())).await?} )
+        Ok(Balance {
+            wei: self.get_balance(address, Some(lower_block.into())).await?,
+        })
     }
 }

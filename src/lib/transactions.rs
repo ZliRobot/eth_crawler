@@ -21,17 +21,17 @@ impl<P: JsonRpcClient> EthCrawlerTransactions for Provider<P> {
     ) -> Result<Vec<Transaction>, ProviderError> {
         let mut res = vec![];
         for block_number in since_block_number..=upto_block_number {
-            let block = self
+            res.push(self
                 .get_block_with_txs(block_number)
                 .await?
-                .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?;
-
-            for transaction in block.transactions.into_iter().filter(|transaction| {
-                transaction.from == target_addr || transaction.to == Some(target_addr)
-            }) {
-                res.push(transaction);
-            }
+                .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
+                .transactions
+                .into_iter()
+                .filter(|transaction| {
+                    transaction.from == target_addr || transaction.to == Some(target_addr)
+                }));
         }
-        Ok(res)
+        
+        Ok(res.into_iter().flatten().collect::<Vec<_>>())
     }
 }
