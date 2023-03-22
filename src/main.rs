@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use clap::Parser;
 use ethers::prelude::*;
+use std::sync::Arc;
 
 mod lib;
 use lib::*;
@@ -9,7 +10,7 @@ use lib::*;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let provider = Provider::<Http>::try_from(RPC_URL)?;
+    let provider = Arc::new(Provider::<Http>::try_from(RPC_URL)?);
     println!("Connected to: {}", RPC_URL);
     let current_block = provider.get_block_number().await?;
     println!("Current block number: {}", current_block);
@@ -17,6 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(starting_block) = args.starting_block {
         display_header();
         for transaction in provider
+            .clone()
             .transations_of_since_upto(args.address, starting_block, current_block.as_u64())
             .await?
             .into_iter()
