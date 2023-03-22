@@ -29,13 +29,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(time) = args.time {
         let timestamp = DateTime::parse_from_str(&time, "%Y-%m-%d %H:%M:%S %z")?.timestamp();
-        println!(
-            "Balance at {}: {}ETH",
-            time,
-            provider
-                .balance_at_timestamp(args.address, timestamp)
-                .await?
-        );
+        if provider
+            .get_block(current_block)
+            .await?
+            .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
+            .timestamp
+            .as_u64()
+            < timestamp as u64
+        {
+            println!("Unfortunatly, this app can't predict the future");
+        } else {
+            println!(
+                "Balance at {}: {}ETH",
+                time,
+                provider
+                    .balance_at_timestamp(args.address, timestamp)
+                    .await?
+            );
+        }
     }
 
     Ok(())
