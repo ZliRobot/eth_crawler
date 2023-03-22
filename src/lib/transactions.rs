@@ -1,3 +1,4 @@
+use super::RETRY_COUNT;
 use async_trait::async_trait;
 use ethers::prelude::*;
 use std::sync::Arc;
@@ -28,17 +29,7 @@ impl<P: JsonRpcClient + 'static> EthCrawlerTransactions for Arc<Provider<P>> {
                 let provider = self.clone();
                 let target_addr = target_addr.clone();
 
-                tokio::spawn(async move {
-                    Ok(provider
-                        .get_block_with_txs(block_number)
-                        .await?
-                        .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
-                        .transactions
-                        .into_iter()
-                        .filter(move |transaction| {
-                            transaction.from == *target_addr || transaction.to == Some(*target_addr)
-                        }))
-                })
+                tokio::spawn(get_block_transactions(provider, target_addr, block_number))
             })
             .collect::<Vec<_>>();
 
@@ -53,4 +44,31 @@ impl<P: JsonRpcClient + 'static> EthCrawlerTransactions for Arc<Provider<P>> {
 
         Ok(transactions)
     }
+}
+
+async fn get_block_transactions<P: JsonRpcClient>(
+    provider: Arc<Provider<P>>,
+    target_addr: Arc<H160>,
+    block_number: u64,
+) -> Result<Vec<Transaction>, ProviderError> {
+    let mut block = provider.get_block_with_txs(block_number).await;
+
+    // Repeat if there is a network error
+    let mut attempt = 0;
+    while let Err(ProviderError::JsonRpcClientError(_)) = block {
+        if attempt == RETRY_COUNT {
+            break;
+        }
+        attempt += 1;
+        block = provider.get_block_with_txs(block_number).await;
+    }
+
+    Ok(block?
+        .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
+        .transactions
+        .into_iter()
+        .filter(move |transaction| {
+            transaction.from == *target_addr || transaction.to == Some(*target_addr)
+        })
+        .collect::<Vec<_>>())
 }
