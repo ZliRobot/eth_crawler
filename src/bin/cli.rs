@@ -7,7 +7,7 @@ use eth_crawler::modules::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
+    let args = CliArgs::parse();
 
     let provider = Arc::new(Provider::<Http>::try_from(RPC_URL)?);
     println!("Connected to: {}", RPC_URL);
