@@ -9,7 +9,8 @@ pub struct Balance {
 
 impl fmt::Display for Balance {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut s = format!("{:0>19}", self.wei)
+
+        let mut s = format!("{:0>19}", self.wei.to_string())
             .chars()
             .rev()
             .collect::<Vec<_>>();
@@ -71,4 +72,15 @@ impl<P: JsonRpcClient> EthCrawlerBalance for Provider<P> {
             wei: self.get_balance(address, Some(lower_block.into())).await?,
         })
     }
+}
+
+#[cfg(test)]
+use std::io::Write;
+#[test]
+fn test_print_balance() {
+    let wei: U256 = 0.into();
+
+    let mut w = Vec::new();
+    write!(w, "{}", Balance{wei}).unwrap();
+    assert_eq!(w, "0.000000000000000000".as_bytes().to_vec());
 }
