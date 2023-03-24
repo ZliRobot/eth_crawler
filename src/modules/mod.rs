@@ -4,7 +4,7 @@ pub mod display;
 pub mod transactions;
 
 pub use arguments::{CliArgs, ServerArgs};
-pub use balance::EthCrawlerBalance;
+pub use balance::{Balance, EthCrawlerBalance};
 pub use display::{display_header, print_formated};
 pub use transactions::EthCrawlerTransactions;
 
