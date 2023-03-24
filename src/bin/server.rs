@@ -1,6 +1,8 @@
 use chrono::DateTime;
 use clap::Parser;
-use ethers::prelude::*;
+use ethers::{prelude::*, providers::Http};
+use rocket::State;
+use std::sync::Arc;
 use std::{error::Error, fmt};
 
 use eth_crawler::modules::*;
@@ -9,8 +11,8 @@ use eth_crawler::modules::*;
 extern crate rocket;
 
 #[get("/")]
-async fn index() -> String {
-    let block_number = get_block_number().await;
+async fn index(provider: &State<Arc<Provider<Http>>>) -> String {
+    let block_number = get_block_number(provider).await;
 
     match block_number {
         Ok(current_block) => format!("Last block: {}", current_block),
@@ -19,8 +21,8 @@ async fn index() -> String {
 }
 
 #[get("/balance/<account>/<time>")]
-async fn balance(account: String, time: String) -> String {
-    let balance = get_balance(account, &time).await;
+async fn balance(account: String, time: String, provider: &State<Arc<Provider<Http>>>) -> String {
+    let balance = get_balance(provider, account, &time).await;
 
     match balance {
         Ok(balance) => format!("Balance at {}: {}ETH", time, balance),
@@ -29,7 +31,7 @@ async fn balance(account: String, time: String) -> String {
 }
 
 #[rocket::main]
-async fn main() -> Result<(), rocket::Error> {
+async fn main() -> Result<(), Box<dyn Error>> {
     let args = ServerArgs::parse();
     let port = if let Some(port_no) = args.port {
         port_no
@@ -38,25 +40,30 @@ async fn main() -> Result<(), rocket::Error> {
     };
 
     let figment = rocket::Config::figment().merge(("port", port));
+    let provider =
+        Arc::new(Provider::<Http>::try_from(RPC_URL).map_err(|_| ServerError::EthClientNotFound)?);
 
     let _rocket = rocket::custom(figment)
         .mount("/", routes![index, balance])
+        .manage(provider)
         .launch()
         .await?;
 
     Ok(())
 }
 
-async fn get_block_number() -> Result<U64, ServerError> {
-    let provider =
-        Provider::<Http>::try_from(RPC_URL).map_err(|_| ServerError::EthClientNotFound)?;
+async fn get_block_number(provider: &Arc<Provider<Http>>) -> Result<U64, ServerError> {
     provider
         .get_block_number()
         .await
         .map_err(|_| ServerError::BlockNotFound)
 }
 
-async fn get_balance(address: String, time: &str) -> Result<Balance, ServerError> {
+async fn get_balance(
+    provider: &Arc<Provider<Http>>,
+    address: String,
+    time: &str,
+) -> Result<Balance, ServerError> {
     let time = time.replace("%20", " ");
     println!("{}", time);
 
@@ -66,8 +73,6 @@ async fn get_balance(address: String, time: &str) -> Result<Balance, ServerError
 
     let address = parse_address(&address)?;
 
-    let provider =
-        Provider::<Http>::try_from(RPC_URL).map_err(|_| ServerError::EthClientNotFound)?;
     provider
         .balance_at_timestamp(address, timestamp)
         .await
