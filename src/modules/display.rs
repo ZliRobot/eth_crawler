@@ -62,19 +62,17 @@ pub fn transactions_to_html(transactions: &[Transaction], target: Address) -> St
             html,
             "
         <tr>\n
-            <th>{}</th>\n
-            <th>{}</th>\n
-            <th>{} {}</th>\n
-            <th>{}</th>\n
+            <th><a href=https://etherscan.io/tx/{tx:?}>{tx}</a></th>\n
+            <th><a href=https://etherscan.io/block/{block}>{block}</a></th>\n
+            <th>{direction} <a href=https://etherscan.io/address/{address}>{address}</a></th>\n
+            <th>{balance}</th>\n
         </tr>\n",
-            transaction.hash.to_string(),
-            transaction
+            tx = transaction.hash,
+            block = transaction
                 .block_number
                 .map(|block_number| block_number.to_string())
                 .unwrap_or_else(|| "Pending".into()),
-            direction,
-            address,
-            Balance::from(transaction.value)
+            balance = Balance::from(transaction.value)
         );
     }
 
@@ -88,10 +86,10 @@ fn direction_address(transaction: &Transaction, target: Address) -> (String, Str
             "to".to_string(),
             transaction
                 .to
-                .map(|to| to.to_string())
+                .map(|to| format!("{:?}", to))
                 .unwrap_or_else(|| "Creating SC".into()),
         )
     } else {
-        ("from".into(), transaction.from.to_string())
+        ("from".into(), format!("{:?}", transaction.from))
     }
 }
