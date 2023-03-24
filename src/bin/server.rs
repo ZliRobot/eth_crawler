@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use clap::Parser;
 use ethers::{prelude::*, providers::Http};
-use rocket::State;
+use rocket::{response::content, State};
 use std::sync::Arc;
 use std::{error::Error, fmt};
 
@@ -30,6 +30,24 @@ async fn balance(account: String, time: String, provider: &State<Arc<Provider<Ht
     }
 }
 
+#[get("/transactions/<account>/<starting_block>")]
+async fn transactions(
+    account: String,
+    starting_block: u64,
+    provider: &State<Arc<Provider<Http>>>,
+) -> content::RawHtml<String> {
+    let address = parse_address(&account);
+    let transactions = get_transactions(provider, account, starting_block).await;
+
+    match transactions {
+        Ok(transactions) => {
+            // Safe to unwrap here since get_transactions() already parsed the address successfully
+            content::RawHtml(transactions_to_html(&transactions, address.unwrap()))
+        }
+        Err(e) => content::RawHtml(format!("{}", e)),
+    }
+}
+
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = ServerArgs::parse();
@@ -44,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Arc::new(Provider::<Http>::try_from(RPC_URL).map_err(|_| ServerError::EthClientNotFound)?);
 
     let _rocket = rocket::custom(figment)
-        .mount("/", routes![index, balance])
+        .mount("/", routes![index, balance, transactions])
         .manage(provider)
         .launch()
         .await?;
@@ -77,6 +95,24 @@ async fn get_balance(
         .balance_at_timestamp(address, timestamp)
         .await
         .map_err(|_| ServerError::BalanceNotAvailable)
+}
+
+async fn get_transactions(
+    provider: &Arc<Provider<Http>>,
+    address: String,
+    starting_block: u64,
+) -> Result<Vec<Transaction>, ServerError> {
+    let address = parse_address(&address)?;
+    let current_block = provider
+        .get_block_number()
+        .await
+        .map_err(|_| ServerError::BlockNotFound)?
+        .as_u64();
+
+    provider
+        .transations_of_since_upto(address, starting_block, current_block)
+        .await
+        .map_err(|_| ServerError::BlockNotFound)
 }
 
 fn parse_address(address: &str) -> Result<Address, ServerError> {

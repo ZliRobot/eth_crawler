@@ -7,7 +7,7 @@ use tokio;
 #[async_trait]
 pub trait EthCrawlerTransactions {
     async fn transations_of_since_upto(
-        self,
+        &self,
         from: H160,
         since_block_number: u64,
         upto_block_number: u64,
@@ -17,7 +17,7 @@ pub trait EthCrawlerTransactions {
 #[async_trait]
 impl<P: JsonRpcClient + 'static> EthCrawlerTransactions for Arc<Provider<P>> {
     async fn transations_of_since_upto(
-        self,
+        &self,
         target_addr: H160,
         since_block_number: u64,
         upto_block_number: u64,
