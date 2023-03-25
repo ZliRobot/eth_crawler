@@ -1,5 +1,5 @@
 pub mod display;
-pub use display::{transactions_to_html, INDEX_HTML};
+pub use display::transactions_to_html;
 
 use clap::Parser;
 

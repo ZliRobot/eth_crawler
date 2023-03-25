@@ -2,7 +2,8 @@ use chrono::naive::NaiveDateTime;
 use clap::Parser;
 use ethers::{prelude::*, providers::Http};
 use rocket::serde::json::Json;
-use rocket::{response::content, State};
+use rocket::{fs::NamedFile, State};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::{error::Error, fmt};
 
@@ -12,8 +13,10 @@ use eth_crawler::{provider::*, server::*};
 extern crate rocket;
 
 #[get("/")]
-async fn index() -> content::RawHtml<&'static str> {
-    content::RawHtml(INDEX_HTML)
+async fn index() -> Option<NamedFile> {
+    NamedFile::open(PathBuf::new().join("src").join("server").join("index.html"))
+        .await
+        .ok()
 }
 
 #[get("/current_block")]
