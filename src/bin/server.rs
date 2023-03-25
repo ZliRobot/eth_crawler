@@ -140,6 +140,9 @@ fn parse_address(address: &str) -> Result<Address, ServerError> {
         .collect::<Result<Vec<_>, ServerError>>()?;
 
     // Address::try_from(buf) panics if length of buf is not 20!
+    if address_digits.len() != 40 {
+        return Err(ServerError::InvalidAddress);
+    }
     let mut buf = [0u8; 20];
     for i in 0..40 {
         buf[i / 2] |= if i % 2 == 0 {
@@ -151,7 +154,7 @@ fn parse_address(address: &str) -> Result<Address, ServerError> {
     Address::try_from(&buf).map_err(|_| ServerError::InvalidAddress)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum ServerError {
     EthClientNotFound,
     BlockNotFound,
@@ -189,5 +192,17 @@ fn test_parse_address() -> Result<(), ServerError> {
     println!("address: {:?}", address);
     println!("parsed: {:?}", parse_address(&format!("{:?}", address))?);
     assert_eq!(parse_address(&format!("{:?}", address))?, address);
+    Ok(())
+}
+
+#[test]
+fn test_parse_invalid_address() -> Result<(), ServerError> {
+    let address = H160::random();
+    let invalid_address = &format!("{:?}", address)[0..19];
+    assert_eq!(
+        parse_address(invalid_address),
+        Err(ServerError::InvalidAddress)
+    );
+
     Ok(())
 }
