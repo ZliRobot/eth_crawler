@@ -46,13 +46,17 @@ async fn transactions(
     starting_block: u64,
     provider: &State<Arc<Provider<Http>>>,
 ) -> Json<String> {
-    let address = parse_address(&account);
-    let transactions = get_transactions(provider, account, starting_block).await;
+    let address = match parse_address(&account) {
+        Ok(address) => address,
+        Err(_) => return Json("Invalid address!".to_string()),
+    };
+
+    let transactions = get_transactions(provider, address, starting_block).await;
 
     match transactions {
         Ok(transactions) => {
             // Safe to unwrap here since get_transactions() already parsed the address successfully
-            Json(transactions_to_html(&transactions, address.unwrap()))
+            Json(transactions_to_html(&transactions, address))
         }
         Err(e) => Json(format!("{}", e)),
     }
@@ -108,10 +112,9 @@ async fn get_balance(
 
 async fn get_transactions(
     provider: &Arc<Provider<Http>>,
-    address: String,
+    address: Address,
     starting_block: u64,
 ) -> Result<Vec<Transaction>, ServerError> {
-    let address = parse_address(&address)?;
     let current_block = provider
         .get_block_number()
         .await

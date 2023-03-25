@@ -32,10 +32,10 @@ pub trait EthCrawlerBalance {
     async fn balance_at_timestamp(
         &self,
         address: H160,
-        time: i64,
+        timestamp: i64,
     ) -> Result<Balance, ProviderError>;
 
-    async fn get_block_time(&self, block_id: U64) -> Result<u64, ProviderError>;
+    async fn get_block_timestamp(&self, block_id: U64) -> Result<u64, ProviderError>;
 }
 
 #[async_trait]
@@ -43,13 +43,18 @@ impl<P: JsonRpcClient + 'static> EthCrawlerBalance for Provider<P> {
     async fn balance_at_timestamp(
         &self,
         address: H160,
-        time: i64,
+        timestamp: i64,
     ) -> Result<Balance, ProviderError> {
-        let target_time = time as u64;
+        let target_time = timestamp as u64;
         let mut upper_block = self.get_block_number().await?;
         let mut lower_block: U64 = 0.into();
         let mut current_block = (upper_block + lower_block) / 2;
-        let mut current_block_time = self.get_block_time(current_block).await?;
+        let mut current_block_time = self.get_block_timestamp(current_block).await?;
+
+        // There were no balances before block 0
+        if timestamp < self.get_block_timestamp(0.into()).await? as i64 {
+            return Ok(Balance::from(U256::zero()));
+        }
 
         // Find the required block using binary search
         while upper_block > lower_block + U64::from(1) {
@@ -59,7 +64,7 @@ impl<P: JsonRpcClient + 'static> EthCrawlerBalance for Provider<P> {
                 lower_block = current_block;
             }
             current_block = (lower_block + upper_block) / 2;
-            current_block_time = self.get_block_time(current_block).await?;
+            current_block_time = self.get_block_timestamp(current_block).await?;
         }
 
         Ok(Balance {
@@ -67,7 +72,7 @@ impl<P: JsonRpcClient + 'static> EthCrawlerBalance for Provider<P> {
         })
     }
 
-    async fn get_block_time(&self, block_id: U64) -> Result<u64, ProviderError> {
+    async fn get_block_timestamp(&self, block_id: U64) -> Result<u64, ProviderError> {
         let block = repeat_if_network_error(&Provider::get_block, self, block_id).await;
 
         Ok(block?
