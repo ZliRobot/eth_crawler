@@ -1,7 +1,8 @@
-use chrono::DateTime;
+use chrono::naive::NaiveDateTime;
 use clap::Parser;
 use ethers::{prelude::*, providers::Http};
 use rocket::{response::content, State};
+use rocket::serde::json::Json;
 use std::sync::Arc;
 use std::{error::Error, fmt};
 
@@ -11,22 +12,27 @@ use eth_crawler::modules::*;
 extern crate rocket;
 
 #[get("/")]
-async fn index(provider: &State<Arc<Provider<Http>>>) -> String {
+async fn index() -> content::RawHtml<&'static str> {
+    content::RawHtml(INDEX_HTML)
+}
+
+#[get("/current_block")]
+async fn current_block(provider: &State<Arc<Provider<Http>>>) -> Json<String> {
     let block_number = get_block_number(provider).await;
 
     match block_number {
-        Ok(current_block) => format!("Last block: {}", current_block),
-        Err(e) => format!("{}", e),
+        Ok(current_block) => Json(format!("Last block: {}", current_block)),
+        Err(e) => Json(format!("{}", e)),
     }
 }
 
 #[get("/balance/<account>/<time>")]
-async fn balance(account: String, time: String, provider: &State<Arc<Provider<Http>>>) -> String {
+async fn balance(account: String, time: String, provider: &State<Arc<Provider<Http>>>) -> Json<String> {
     let balance = get_balance(provider, account, &time).await;
 
     match balance {
-        Ok(balance) => format!("Balance at {}: {}ETH", time, balance),
-        Err(e) => format!("{}", e), //"Error getting balance".into()
+        Ok(balance) => Json(format!("{}", balance)),
+        Err(e) => Json(format!("{}", e))
     }
 }
 
@@ -35,16 +41,16 @@ async fn transactions(
     account: String,
     starting_block: u64,
     provider: &State<Arc<Provider<Http>>>,
-) -> content::RawHtml<String> {
+) -> Json<String> {
     let address = parse_address(&account);
     let transactions = get_transactions(provider, account, starting_block).await;
 
     match transactions {
         Ok(transactions) => {
             // Safe to unwrap here since get_transactions() already parsed the address successfully
-            content::RawHtml(transactions_to_html(&transactions, address.unwrap()))
+            Json(transactions_to_html(&transactions, address.unwrap()))
         }
-        Err(e) => content::RawHtml(format!("{}", e)),
+        Err(e) => Json(format!("{}", e)),
     }
 }
 
@@ -62,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Arc::new(Provider::<Http>::try_from(RPC_URL).map_err(|_| ServerError::EthClientNotFound)?);
 
     let _rocket = rocket::custom(figment)
-        .mount("/", routes![index, balance, transactions])
+        .mount("/", routes![index, balance, transactions, current_block])
         .manage(provider)
         .launch()
         .await?;
@@ -83,9 +89,8 @@ async fn get_balance(
     time: &str,
 ) -> Result<Balance, ServerError> {
     let time = time.replace("%20", " ");
-    println!("{}", time);
 
-    let timestamp = DateTime::parse_from_str(time.trim(), "%Y-%m-%d %H:%M:%S %z")
+    let timestamp = NaiveDateTime::parse_from_str(&time, "%Y-%m-%dT%H:%M:%S")
         .map_err(|_| ServerError::InvalidTimestamp)?
         .timestamp();
 
@@ -118,7 +123,8 @@ async fn get_transactions(
 fn parse_address(address: &str) -> Result<Address, ServerError> {
     let address_digits = address
         .chars()
-        .skip(2) //Skip 0x
+        .skip_while(|&c| c != 'x') // skip eventual leading zeros and whitespaces
+        .skip(1) // Skip x
         .map(|c| {
             c.to_digit(16)
                 .map(|d| d as u8)
@@ -164,8 +170,8 @@ impl fmt::Display for ServerError {
 #[cfg(test)]
 #[test]
 fn test_timestamp() {
-    let time = "2022-10-01 08:00:00 +0000";
-    DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z")
+    let time = "2023-03-14T08:55:04:";
+    NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S:")
         .unwrap()
         .timestamp();
 }

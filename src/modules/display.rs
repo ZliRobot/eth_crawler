@@ -93,3 +93,55 @@ fn direction_address(transaction: &Transaction, target: Address) -> (String, Str
         ("from".into(), format!("{:?}", transaction.from))
     }
 }
+
+pub static INDEX_HTML: &'static str = r#"<!DOCTYPE html>
+<html>
+<body onload="setInterval(print_current_block, 5000)">
+<style>
+*{ cursor: inherit;}
+</style>
+
+<h2>Account info</h2>
+<p id="current_block"> Last block: </p>
+
+<label for="address">Account address:</label>
+<input type="text" id="address" name="address" size="50"><br>
+  
+
+<label for="datetime"> Balance at: </label>
+<input type="datetime-local" id="datetime" name="datetime" step=1> UTC:  
+<label id=balance> -- </label> ETH<br>
+
+<label for="starting_block"> Transactions starting from block: </label>
+<input type="number" id="starting_block" name="starting_block"><br>
+
+<button onclick="submit()">Submit</button>
+
+<p id="transactions"></p>
+
+<script>
+async function print_current_block() {
+    document.getElementById("current_block").innerHTML = await fetch(window.location.pathname + "current_block").then((res) => res.json());
+}
+
+async function submit() {
+    document.body.style.cursor = 'wait';
+
+    const address = document.getElementById("address").value;
+    const datetime = document.getElementById("datetime").value;
+    const starting_block = document.getElementById("starting_block").valueAsNumber;
+
+    if  (datetime != "") {
+        document.getElementById("balance").innerHTML = await fetch(window.location.pathname + "balance/ " + address + "/" + datetime).then((res) => res.json());
+    }
+
+    if (!isNaN(starting_block)) {
+        document.getElementById("transactions").innerHTML = await fetch(window.location.pathname + "transactions/" + address + "/" + starting_block).then((res) => res.json());
+    }
+
+    document.body.style.cursor = 'default';
+}
+</script>
+
+</body>
+</html>"#;

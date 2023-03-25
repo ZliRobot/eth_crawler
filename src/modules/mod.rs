@@ -5,7 +5,7 @@ pub mod transactions;
 
 pub use arguments::{CliArgs, ServerArgs};
 pub use balance::{Balance, EthCrawlerBalance};
-pub use display::{display_header, print_formated, transactions_to_html};
+pub use display::{display_header, print_formated, transactions_to_html, INDEX_HTML};
 pub use transactions::EthCrawlerTransactions;
 
 pub const RETRY_COUNT: usize = 4;
