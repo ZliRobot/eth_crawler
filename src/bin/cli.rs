@@ -3,7 +3,7 @@ use clap::Parser;
 use ethers::prelude::*;
 use std::sync::Arc;
 
-use eth_crawler::modules::*;
+use eth_crawler::{cli::*, provider::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

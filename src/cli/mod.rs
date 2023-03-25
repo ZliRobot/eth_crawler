@@ -1,3 +1,6 @@
+pub mod display;
+pub use display::{display_header, print_formated};
+
 use clap::Parser;
 use ethers::prelude::*;
 
@@ -13,11 +16,4 @@ pub struct CliArgs {
     /// Time at which you want to see the balance.
     #[arg(short, long)]
     pub time: Option<String>,
-}
-
-#[derive(Parser)]
-pub struct ServerArgs {
-    /// Port number to listen on. (Default: 8080)
-    #[arg(short, long)]
-    pub port: Option<u64>,
 }

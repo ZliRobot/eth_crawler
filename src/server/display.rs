@@ -1,28 +1,6 @@
-use super::balance::Balance;
+use crate::provider::*;
 use ethers::prelude::*;
 use std::fmt::Write;
-
-pub fn display_header() {
-    println!(
-        "\n| {:15} | {:10} | {:20} | {:20} |\n{:-<5$}",
-        "Tx hash", "Block", "To/from", "Value (ETH)", "", 78
-    )
-}
-pub fn print_formated(transaction: Transaction, target: Address) {
-    let (direction, address) = direction_address(&transaction, target);
-
-    println!(
-        "| {:<15} | {:<10} | {:4} {:<15} | {:<20} |",
-        transaction.hash.to_string(),
-        transaction
-            .block_number
-            .map(|block_number| block_number.to_string())
-            .unwrap_or_else(|| "Pending".into()),
-        direction,
-        address,
-        Balance::from(transaction.value)
-    );
-}
 
 pub fn transactions_to_html(transactions: &[Transaction], target: Address) -> String {
     let mut html = String::new();
@@ -56,7 +34,7 @@ pub fn transactions_to_html(transactions: &[Transaction], target: Address) -> St
     );
 
     for transaction in transactions {
-        let (direction, address) = direction_address(&transaction, target);
+        let (direction, address) = direction_address(transaction, target);
 
         _ = write!(
             html,
@@ -80,21 +58,7 @@ pub fn transactions_to_html(transactions: &[Transaction], target: Address) -> St
     html
 }
 
-fn direction_address(transaction: &Transaction, target: Address) -> (String, String) {
-    if transaction.from == target {
-        (
-            "to".to_string(),
-            transaction
-                .to
-                .map(|to| format!("{:?}", to))
-                .unwrap_or_else(|| "Creating SC".into()),
-        )
-    } else {
-        ("from".into(), format!("{:?}", transaction.from))
-    }
-}
-
-pub static INDEX_HTML: &'static str = r#"<!DOCTYPE html>
+pub static INDEX_HTML: &str = r#"<!DOCTYPE html>
 <html>
 <body onload="setInterval(print_current_block, 5000)">
 <style>

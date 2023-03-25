@@ -72,3 +72,17 @@ async fn get_block_transactions<P: JsonRpcClient>(
         })
         .collect::<Vec<_>>())
 }
+
+pub fn direction_address(transaction: &Transaction, target: Address) -> (String, String) {
+    if transaction.from == target {
+        (
+            "to".to_string(),
+            transaction
+                .to
+                .map(|to| format!("{:?}", to))
+                .unwrap_or_else(|| "Creating SC".into()),
+        )
+    } else {
+        ("from".into(), format!("{:?}", transaction.from))
+    }
+}

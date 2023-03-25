@@ -1,12 +1,12 @@
 use chrono::naive::NaiveDateTime;
 use clap::Parser;
 use ethers::{prelude::*, providers::Http};
-use rocket::{response::content, State};
 use rocket::serde::json::Json;
+use rocket::{response::content, State};
 use std::sync::Arc;
 use std::{error::Error, fmt};
 
-use eth_crawler::modules::*;
+use eth_crawler::{provider::*, server::*};
 
 #[macro_use]
 extern crate rocket;
@@ -27,12 +27,16 @@ async fn current_block(provider: &State<Arc<Provider<Http>>>) -> Json<String> {
 }
 
 #[get("/balance/<account>/<time>")]
-async fn balance(account: String, time: String, provider: &State<Arc<Provider<Http>>>) -> Json<String> {
+async fn balance(
+    account: String,
+    time: String,
+    provider: &State<Arc<Provider<Http>>>,
+) -> Json<String> {
     let balance = get_balance(provider, account, &time).await;
 
     match balance {
         Ok(balance) => Json(format!("{}", balance)),
-        Err(e) => Json(format!("{}", e))
+        Err(e) => Json(format!("{}", e)),
     }
 }
 
