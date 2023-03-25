@@ -1,4 +1,4 @@
-use super::RETRY_COUNT;
+use super::repeat_if_network_error;
 use async_trait::async_trait;
 use ethers::prelude::*;
 use std::convert::From;
@@ -9,6 +9,7 @@ pub struct Balance {
 }
 
 impl fmt::Display for Balance {
+    /// Returns a string representation of the balance in ETH
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = format!("{:0>19}", self.wei.to_string())
             .chars()
@@ -38,7 +39,7 @@ pub trait EthCrawlerBalance {
 }
 
 #[async_trait]
-impl<P: JsonRpcClient> EthCrawlerBalance for Provider<P> {
+impl<P: JsonRpcClient + 'static> EthCrawlerBalance for Provider<P> {
     async fn balance_at_timestamp(
         &self,
         address: H160,
@@ -67,17 +68,7 @@ impl<P: JsonRpcClient> EthCrawlerBalance for Provider<P> {
     }
 
     async fn get_block_time(&self, block_id: U64) -> Result<u64, ProviderError> {
-        let mut block = self.get_block(block_id).await;
-
-        // Repeat if there is a network error
-        let mut attempt = 0;
-        while let Err(ProviderError::JsonRpcClientError(_)) = block {
-            if attempt == RETRY_COUNT {
-                break;
-            }
-            attempt += 1;
-            block = self.get_block(block_id).await;
-        }
+        let block = repeat_if_network_error(&Provider::get_block, self, block_id).await;
 
         Ok(block?
             .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?

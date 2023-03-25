@@ -1,8 +1,9 @@
-use super::RETRY_COUNT;
 use async_trait::async_trait;
 use ethers::prelude::*;
 use std::sync::Arc;
 use tokio;
+
+use super::repeat_if_network_error;
 
 #[async_trait]
 pub trait EthCrawlerTransactions {
@@ -51,17 +52,12 @@ async fn get_block_transactions<P: JsonRpcClient>(
     target_addr: Arc<H160>,
     block_number: u64,
 ) -> Result<Vec<Transaction>, ProviderError> {
-    let mut block = provider.get_block_with_txs(block_number).await;
-
-    // Repeat if there is a network error
-    let mut attempt = 0;
-    while let Err(ProviderError::JsonRpcClientError(_)) = block {
-        if attempt == RETRY_COUNT {
-            break;
-        }
-        attempt += 1;
-        block = provider.get_block_with_txs(block_number).await;
-    }
+    let block = repeat_if_network_error(
+        &Provider::get_block_with_txs,
+        &provider,
+        block_number.into(),
+    )
+    .await;
 
     Ok(block?
         .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
