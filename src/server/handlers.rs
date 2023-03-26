@@ -18,6 +18,7 @@ pub async fn get_balance(
     time: &str,
 ) -> Result<Balance, ServerError> {
     let timestamp = NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S")
+        .or_else(|_| NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M"))
         .map_err(|_| ServerError::InvalidTimestamp)?
         .timestamp();
 
@@ -95,8 +96,16 @@ impl fmt::Display for ServerError {
 #[cfg(test)]
 #[test]
 fn test_timestamp_parsing() {
-    let time = "2023-03-14T08:55:04:";
-    NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S:")
+    let time = "2023-03-14T08:55:04";
+    NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S")
+        .unwrap()
+        .timestamp();
+}
+
+#[test]
+fn test_short_timestamp_parsing() {
+    let time = "2023-03-14T08:55";
+    NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M")
         .unwrap()
         .timestamp();
 }
