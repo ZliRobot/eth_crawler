@@ -11,6 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let provider = Arc::new(Provider::<Http>::try_from(RPC_URL)?);
     println!("Connected to: {}", RPC_URL);
+
     let current_block = provider.get_block_number().await?;
     println!("Current block number: {}", current_block);
 
@@ -36,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             time: Some(time),
         } => {
             let timestamp = DateTime::parse_from_str(&time, "%Y-%m-%d %H:%M:%S %z")?.timestamp();
+
             if provider.get_block_timestamp(current_block).await? < timestamp as u64 {
                 println!("Unfortunatly, this app can't predict the future");
             } else {

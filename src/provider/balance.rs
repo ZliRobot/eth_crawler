@@ -42,7 +42,7 @@ pub trait EthCrawlerBalance {
 impl<P: JsonRpcClient + 'static> EthCrawlerBalance for Provider<P> {
     async fn balance_at_timestamp(
         &self,
-        address: H160,
+        address: Address,
         timestamp: i64,
     ) -> Result<Balance, ProviderError> {
         let target_time = timestamp as u64;

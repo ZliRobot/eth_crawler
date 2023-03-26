@@ -21,7 +21,7 @@ async fn index() -> Option<NamedFile> {
 
 #[get("/current_block")]
 async fn current_block(provider: &State<Arc<Provider<Http>>>) -> Json<String> {
-    let block_number = get_block_number(provider).await;
+    let block_number = get_last_block_number(provider).await;
 
     match block_number {
         Ok(current_block) => Json(format!("Last block: {}", current_block)),
@@ -57,10 +57,7 @@ async fn transactions(
     let transactions = get_transactions(provider, address, starting_block).await;
 
     match transactions {
-        Ok(transactions) => {
-            // Safe to unwrap here since get_transactions() already parsed the address successfully
-            Json(transactions_to_html(&transactions, address))
-        }
+        Ok(transactions) => Json(transactions_to_html(&transactions, address)),
         Err(e) => Json(format!("{}", e)),
     }
 }
@@ -87,7 +84,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn get_block_number(provider: &Arc<Provider<Http>>) -> Result<U64, ServerError> {
+async fn get_last_block_number(provider: &Arc<Provider<Http>>) -> Result<U64, ServerError> {
     provider
         .get_block_number()
         .await
@@ -99,9 +96,7 @@ async fn get_balance(
     address: String,
     time: &str,
 ) -> Result<Balance, ServerError> {
-    let time = time.replace("%20", " ");
-
-    let timestamp = NaiveDateTime::parse_from_str(&time, "%Y-%m-%dT%H:%M:%S")
+    let timestamp = NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S")
         .map_err(|_| ServerError::InvalidTimestamp)?
         .timestamp();
 
@@ -118,11 +113,7 @@ async fn get_transactions(
     address: Address,
     starting_block: u64,
 ) -> Result<Vec<Transaction>, ServerError> {
-    let current_block = provider
-        .get_block_number()
-        .await
-        .map_err(|_| ServerError::BlockNotFound)?
-        .as_u64();
+    let current_block = get_last_block_number(provider).await?.as_u64();
 
     provider
         .transations_of_since_upto(address, starting_block, current_block)
@@ -182,7 +173,7 @@ impl fmt::Display for ServerError {
 
 #[cfg(test)]
 #[test]
-fn test_timestamp() {
+fn test_timestamp_parsing() {
     let time = "2023-03-14T08:55:04:";
     NaiveDateTime::parse_from_str(time, "%Y-%m-%dT%H:%M:%S:")
         .unwrap()

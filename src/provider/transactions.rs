@@ -9,7 +9,7 @@ use super::repeat_if_network_error;
 pub trait EthCrawlerTransactions {
     async fn transations_of_since_upto(
         &self,
-        from: H160,
+        address: Address,
         since_block_number: u64,
         upto_block_number: u64,
     ) -> Result<Vec<Transaction>, ProviderError>;
@@ -19,18 +19,18 @@ pub trait EthCrawlerTransactions {
 impl<P: JsonRpcClient + 'static> EthCrawlerTransactions for Arc<Provider<P>> {
     async fn transations_of_since_upto(
         &self,
-        target_addr: H160,
+        address: Address,
         since_block_number: u64,
         upto_block_number: u64,
     ) -> Result<Vec<Transaction>, ProviderError> {
-        let target_addr = Arc::new(target_addr);
+        let address = Arc::new(address);
 
         let tasks = (since_block_number..=upto_block_number)
             .map(|block_number| {
                 let provider = self.clone();
-                let target_addr = target_addr.clone();
+                let address = address.clone();
 
-                tokio::spawn(get_block_transactions(provider, target_addr, block_number))
+                tokio::spawn(get_block_transactions(provider, address, block_number))
             })
             .collect::<Vec<_>>();
 
@@ -49,7 +49,7 @@ impl<P: JsonRpcClient + 'static> EthCrawlerTransactions for Arc<Provider<P>> {
 
 async fn get_block_transactions<P: JsonRpcClient>(
     provider: Arc<Provider<P>>,
-    target_addr: Arc<H160>,
+    address: Arc<Address>,
     block_number: u64,
 ) -> Result<Vec<Transaction>, ProviderError> {
     let block = repeat_if_network_error(
@@ -63,9 +63,7 @@ async fn get_block_transactions<P: JsonRpcClient>(
         .ok_or_else(|| ProviderError::CustomError("Block unavailable".into()))?
         .transactions
         .into_iter()
-        .filter(move |transaction| {
-            transaction.from == *target_addr || transaction.to == Some(*target_addr)
-        })
+        .filter(move |transaction| transaction.from == *address || transaction.to == Some(*address))
         .collect::<Vec<_>>())
 }
 

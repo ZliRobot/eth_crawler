@@ -13,12 +13,13 @@ pub fn transactions_to_html(transactions: &[Transaction], target: Address) -> St
         _ = write!(
             html,
             "
-        <tr>\n
-            <th><a href=https://etherscan.io/tx/{tx:?}>{tx}</a></th>\n
-            <th><a href=https://etherscan.io/block/{block}>{block}</a></th>\n
-            <th>{direction} <a href=https://etherscan.io/address/{address}>{address}</a></th>\n
-            <th>{balance}</th>\n
-        </tr>\n",
+            <tr>\n
+                <th><a href=https://etherscan.io/tx/{tx:?}>{tx}</a></th>\n
+                <th><a href=https://etherscan.io/block/{block}>{block}</a></th>\n
+                <th>{direction} <a href=https://etherscan.io/address/{address}>{address}</a></th>\n
+                <th>{balance}</th>\n
+            </tr>\n
+            ",
             tx = transaction.hash,
             block = transaction
                 .block_number
