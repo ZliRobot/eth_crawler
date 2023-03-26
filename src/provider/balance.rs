@@ -31,7 +31,7 @@ impl From<U256> for Balance {
 pub trait EthCrawlerBalance {
     async fn balance_at_timestamp(
         &self,
-        address: H160,
+        address: Address,
         timestamp: i64,
     ) -> Result<Balance, ProviderError>;
 

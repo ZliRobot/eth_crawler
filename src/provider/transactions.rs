@@ -67,6 +67,8 @@ async fn get_block_transactions<P: JsonRpcClient>(
         .collect::<Vec<_>>())
 }
 
+/// Returns a string desribing direction of transaction (from/to)
+/// and the address of the other involved party
 pub fn direction_address(transaction: &Transaction, target: Address) -> (String, String) {
     if transaction.from == target {
         (
