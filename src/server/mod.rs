@@ -1,6 +1,9 @@
 pub mod display;
 pub use display::transactions_to_html;
 
+pub mod handlers;
+pub use handlers::*;
+
 use clap::Parser;
 
 #[derive(Parser)]
