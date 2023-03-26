@@ -13,7 +13,7 @@
 
 
         <label for="datetime"> Balance at: </label>
-        <input type="datetime-local" id="datetime" name="datetime" step=1> UTC:  
+        <input type="datetime-local" id="datetime" name="datetime" step=1 max="2022-01-01T00:00"> UTC:  
         <label id=balance> -- </label> ETH <br>
 
         <label for="starting_block"> Transactions starting from block: </label>
@@ -24,6 +24,8 @@
         <p id="transactions"></p>
 
         <script>
+            document.getElementById("datetime").setAttribute("max",  new Date().toISOString().slice(0, -1));
+
             async function print_current_block() {
                 document.getElementById("current_block").innerHTML = await fetch(window.location.pathname + "current_block").then((res) => res.json());
             }
